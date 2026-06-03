@@ -473,6 +473,55 @@ h1 .roman {
   line-height: 1.35;
 }
 
+.artist-profile {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1fr);
+  gap: clamp(28px, 7vw, 96px);
+  align-items: end;
+  padding: clamp(44px, 8vw, 96px) var(--side);
+}
+
+.profile-image {
+  position: relative;
+  margin: 0;
+}
+
+.profile-image::before {
+  position: absolute;
+  top: -18px;
+  right: -18px;
+  width: 70px;
+  height: 70px;
+  border-top: 1px solid var(--rust);
+  border-right: 1px solid var(--rust);
+  content: "";
+}
+
+.profile-image img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  clip-path: polygon(0 0, 100% 3%, 96% 100%, 0 96%);
+  filter: saturate(0.72) contrast(1.06);
+}
+
+.profile-image figcaption {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.profile-copy {
+  color: var(--muted);
+  font-size: clamp(17px, 1.65vw, 23px);
+  line-height: 1.48;
+}
+
+.profile-copy p {
+  margin-bottom: 18px;
+}
+
 .contact {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -516,6 +565,29 @@ h1 .roman {
   margin-top: 34px;
 }
 
+.artist-chip {
+  display: inline-flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 28px;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.artist-chip img {
+  width: 58px;
+  height: 58px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  object-fit: cover;
+  filter: saturate(0.82) contrast(1.08);
+}
+
+.artist-chip span span {
+  display: block;
+}
+
 .text-link {
   display: inline-flex;
   align-items: center;
@@ -540,6 +612,44 @@ h1 .roman {
 .project-card img,
 .gallery-strip img {
   filter: saturate(0.72) contrast(1.08) brightness(0.96);
+}
+
+.signal-band {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(8px, 1fr)) auto repeat(5, minmax(8px, 1fr));
+  gap: 9px;
+  align-items: center;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 18px var(--side);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.signal-band span {
+  display: block;
+  height: 1px;
+  background: var(--line);
+}
+
+.signal-band span:nth-child(2),
+.signal-band span:nth-child(10) {
+  height: 18px;
+  background: var(--rust);
+}
+
+.signal-band span:nth-child(4),
+.signal-band span:nth-child(8) {
+  height: 34px;
+  background: var(--moss);
+}
+
+.signal-band p {
+  margin: 0;
+  white-space: nowrap;
+  font-size: 11px;
+  text-transform: uppercase;
 }
 
 .page-shell {
@@ -719,6 +829,66 @@ h1 .roman {
   border-top: 1px solid var(--line);
   padding-left: 0;
   padding-right: 0;
+}
+
+.project-history {
+  max-width: 980px;
+  margin: 0 0 clamp(64px, 9vw, 120px);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.project-history summary {
+  display: inline-flex;
+  gap: 14px;
+  align-items: center;
+  min-height: 60px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  list-style: none;
+  text-transform: uppercase;
+}
+
+.project-history summary::-webkit-details-marker {
+  display: none;
+}
+
+.history-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink);
+}
+
+.project-history details[open] .history-mark {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.project-history ol {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0 0 26px;
+  background: var(--line);
+  list-style: none;
+}
+
+.project-history li {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 20px;
+  padding: 16px 0;
+  background: var(--paper);
+}
+
+.project-history time {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .profile-panel {
@@ -992,6 +1162,7 @@ body.lang-en .en {
   .intro-grid,
   .practice-content,
   .bio-grid,
+  .artist-profile,
   .contact {
     grid-template-columns: 1fr;
   }
@@ -1109,6 +1280,21 @@ body.lang-en .en {
 
   .gallery-strip img {
     height: 52vh;
+  }
+
+  .signal-band {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .signal-band p {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    white-space: normal;
+  }
+
+  .project-history li {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 
   .detail-nav {
