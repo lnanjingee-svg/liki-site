@@ -1,0 +1,2133 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>纸飞机粒子交互测试</title>
+    <style>
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  background: #07111f;
+  color: #f7fbff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 104%, rgba(255, 214, 121, 0.25), transparent 34%),
+    radial-gradient(circle at 18% 18%, rgba(138, 255, 214, 0.16), transparent 30%),
+    radial-gradient(circle at 76% 74%, rgba(255, 216, 123, 0.12), transparent 35%),
+    #07111f;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-height: 520px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.camera,
+.scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.camera {
+  object-fit: cover;
+  transform: scaleX(-1);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.scene {
+  z-index: 2;
+}
+
+.stage::before,
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.stage::before {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at center, black, transparent 74%);
+  opacity: 0.42;
+}
+
+.stage::after {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035), transparent 12%, transparent 88%, rgba(255, 255, 255, 0.035)),
+    radial-gradient(circle at center, transparent 40%, rgba(2, 4, 3, 0.72));
+}
+
+.toolbar {
+  position: absolute;
+  z-index: 3;
+  top: max(18px, env(safe-area-inset-top));
+  left: max(18px, env(safe-area-inset-left));
+  right: max(18px, env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(247, 251, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(2, 4, 3, 0.52);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 520ms ease,
+    transform 520ms ease,
+    filter 520ms ease;
+}
+
+.toolbar.is-hidden {
+  opacity: 0;
+  transform: translateY(-18px);
+  filter: blur(3px);
+  pointer-events: none;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  min-width: 225px;
+  gap: 12px;
+}
+
+.mark {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  clip-path: polygon(5% 48%, 95% 6%, 60% 94%, 47% 58%);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(137, 255, 218, 0.96) 36%, rgba(255, 222, 122, 0.92));
+  box-shadow:
+    0 0 24px rgba(137, 255, 218, 0.5),
+    0 0 5px rgba(255, 255, 255, 0.7) inset;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 14px;
+  line-height: 1.1;
+  font-weight: 650;
+  letter-spacing: 0;
+  color: rgba(247, 251, 255, 0.96);
+}
+
+#status {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.2;
+  color: rgba(193, 255, 230, 0.78);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quote-editor {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 420px) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 8px 0 10px;
+  border: 1px solid rgba(247, 251, 255, 0.14);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(247, 251, 255, 0.76);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.quote-editor input {
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  border: 1px solid rgba(247, 251, 255, 0.16);
+  border-radius: 6px;
+  padding: 0 9px;
+  outline: none;
+  color: rgba(247, 251, 255, 0.94);
+  background: rgba(2, 4, 3, 0.36);
+}
+
+.quote-editor input:focus {
+  border-color: rgba(137, 255, 218, 0.62);
+  box-shadow: 0 0 0 2px rgba(137, 255, 218, 0.12);
+}
+
+button {
+  min-height: 36px;
+  border: 1px solid rgba(247, 251, 255, 0.18);
+  border-radius: 7px;
+  padding: 0 13px;
+  color: rgba(247, 251, 255, 0.94);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(137, 255, 218, 0.55);
+  background: rgba(137, 255, 218, 0.11);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+.range {
+  display: grid;
+  grid-template-columns: auto minmax(105px, 148px);
+  align-items: center;
+  gap: 9px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgba(247, 251, 255, 0.14);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(247, 251, 255, 0.76);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #89ffda;
+}
+
+.notice {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  width: min(420px, calc(100vw - 36px));
+  transform: translateX(-50%);
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 222, 122, 0.36);
+  border-radius: 8px;
+  background: rgba(28, 22, 8, 0.74);
+  color: rgba(255, 244, 206, 0.92);
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.55;
+  backdrop-filter: blur(16px);
+}
+
+@media (max-width: 740px) {
+  .stage {
+    min-height: 100svh;
+  }
+
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .brand {
+    min-width: 0;
+  }
+
+  .controls {
+    justify-content: stretch;
+  }
+
+  button {
+    flex: 1 1 126px;
+  }
+
+  .quote-editor {
+    flex: 1 1 100%;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .range {
+    flex: 1 1 100%;
+    grid-template-columns: auto 1fr;
+  }
+}
+
+    </style>
+  </head>
+  <body>
+    <main class="stage" aria-label="纸飞机粒子交互测试">
+      <video id="camera" class="camera" autoplay muted playsinline></video>
+      <canvas id="scene" class="scene"></canvas>
+
+      <section class="toolbar" aria-label="交互控制">
+        <div class="brand">
+          <span class="mark"></span>
+          <div>
+            <h1>Paper Plane Field</h1>
+            <p id="status">准备摄像头</p>
+          </div>
+        </div>
+
+        <div class="controls">
+          <form id="quoteForm" class="quote-editor" autocomplete="off">
+            <label for="quoteInput">最终文字</label>
+            <input
+              id="quoteInput"
+              type="text"
+              maxlength="42"
+              value="祝你永远记得这夏日明亮，如你明天一样"
+            />
+            <button id="quoteSubmit" type="submit">提交</button>
+          </form>
+          <button id="cameraButton" type="button">开启摄像头</button>
+          <button id="testButton" type="button">触发测试</button>
+          <label class="range">
+            <span>灵敏度</span>
+            <input id="sensitivity" type="range" min="0.6" max="2.2" step="0.05" value="1.05" />
+          </label>
+        </div>
+      </section>
+
+      <div id="cameraNotice" class="notice" hidden>
+        摄像头暂时不可用，可以先用测试触发查看视觉效果。
+      </div>
+    </main>
+    <script>
+const camera = document.querySelector("#camera");
+const canvas = document.querySelector("#scene");
+const ctx = canvas.getContext("2d", { alpha: true });
+const statusText = document.querySelector("#status");
+const cameraButton = document.querySelector("#cameraButton");
+const testButton = document.querySelector("#testButton");
+const sensitivityInput = document.querySelector("#sensitivity");
+const cameraNotice = document.querySelector("#cameraNotice");
+const toolbar = document.querySelector(".toolbar");
+const quoteForm = document.querySelector("#quoteForm");
+const quoteInput = document.querySelector("#quoteInput");
+
+const DEFAULT_QUOTE = "祝你永远记得这夏日明亮，如你明天一样";
+const TAU = Math.PI * 2;
+const TOOLBAR_IDLE_DELAY = 3000;
+let detectW = 128;
+let detectH = 72;
+const detectCanvas = document.createElement("canvas");
+const detectCtx = detectCanvas.getContext("2d", { willReadFrequently: true });
+
+detectCanvas.width = detectW;
+detectCanvas.height = detectH;
+
+let width = 0;
+let height = 0;
+let dpr = 1;
+let cameraReady = false;
+let cameraStartedAt = 0;
+let previousFrame = null;
+let motionHistory = [];
+let lastFrameAt = performance.now();
+let lastTriggerAt = -9000;
+let lastMotionAt = 0;
+let lastPaperCandidateAt = -9000;
+let lastInboundPlaneAt = -9000;
+let backgroundFrame = null;
+let lastMotionBlob = null;
+let previousMotionBlobs = [];
+const recentPlaneTriggers = [];
+let lastPlaneDotAt = -9000;
+let screenPlanesEmptySince = 0;
+let textStartedAt = 0;
+let textMode = "idle";
+let currentStatus = "";
+let finalQuote = DEFAULT_QUOTE;
+let toolbarIdleTimer = 0;
+const finalLogoFlights = [];
+
+const skyStars = [];
+const ambientDots = [];
+const tinyFireworks = [];
+const popFireworks = [];
+let nextPopFireworkAt = 0;
+const shockwaves = [];
+const planes = [];
+const sparks = [];
+
+function random(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function easeInOut(t) {
+  return t * t * (3 - 2 * t);
+}
+
+function easeIn(t) {
+  return t * t;
+}
+
+function easeOut(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function smoothstep(edge0, edge1, value) {
+  const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+function setStatus(text) {
+  if (currentStatus !== text) {
+    currentStatus = text;
+    statusText.textContent = text;
+  }
+}
+
+function normalizeQuoteText(value) {
+  const clean = Array.from(String(value || "").replace(/\s+/g, " ").trim()).slice(0, 42).join("");
+  return clean || DEFAULT_QUOTE;
+}
+
+function buildQuoteLines(text) {
+  const chars = Array.from(normalizeQuoteText(text));
+  const maxLines = width < 760 ? 4 : 3;
+  const idealChars = width < 760 ? 7 : 8;
+  const lineCount = Math.max(1, Math.min(maxLines, Math.ceil(chars.length / idealChars)));
+  const targetLength = Math.ceil(chars.length / lineCount);
+  const punctuation = "，。,.、；;！!？?";
+  const lines = [];
+  let buffer = "";
+
+  for (const char of chars) {
+    buffer += char;
+    const bufferLength = Array.from(buffer).length;
+    const canBreak = lines.length < lineCount - 1;
+    const punctuationBreak = punctuation.includes(char) && bufferLength >= Math.max(4, targetLength * 0.62);
+
+    if (canBreak && (punctuationBreak || bufferLength >= targetLength)) {
+      lines.push(buffer);
+      buffer = "";
+    }
+  }
+
+  if (buffer) {
+    lines.push(buffer);
+  }
+
+  while (lines.length > maxLines) {
+    const tail = lines.pop();
+    lines[lines.length - 1] += tail;
+  }
+
+  return lines;
+}
+
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  if (width >= height) {
+    detectW = 128;
+    detectH = Math.round(detectW * height / width);
+  } else {
+    detectH = 128;
+    detectW = Math.round(detectH * width / height);
+  }
+
+  detectW = Math.round(clamp(detectW, 72, 160));
+  detectH = Math.round(clamp(detectH, 54, 140));
+  detectCanvas.width = detectW;
+  detectCanvas.height = detectH;
+  previousFrame = null;
+  backgroundFrame = null;
+  motionHistory = [];
+  lastMotionBlob = null;
+  previousMotionBlobs = [];
+  recentPlaneTriggers.length = 0;
+  lastPlaneDotAt = -9000;
+  lastInboundPlaneAt = -9000;
+  screenPlanesEmptySince = 0;
+  finalLogoFlights.length = 0;
+
+  resetAmbientDots();
+}
+
+function resetAmbientDots() {
+  skyStars.length = 0;
+  ambientDots.length = 0;
+  tinyFireworks.length = 0;
+  popFireworks.length = 0;
+  nextPopFireworkAt = performance.now() + random(900, 1800);
+  const starCount = Math.round(clamp((width * height) / 3600, 190, 520));
+  const dotCount = Math.round(clamp((width * height) / 11500, 58, 160));
+
+  for (let i = 0; i < starCount; i += 1) {
+    const depth = Math.random();
+    skyStars.push({
+      x: Math.random() * width,
+      y: Math.pow(Math.random(), 1.7) * height * 0.86,
+      size: lerp(0.35, 1.9, depth),
+      phase: random(0, TAU),
+      speed: random(0.002, 0.011),
+      alpha: lerp(0.08, 0.58, depth),
+      hue: Math.random() > 0.72 ? random(42, 54) : random(176, 208),
+      drift: random(-0.018, 0.018),
+    });
+  }
+
+  for (let i = 0; i < dotCount; i += 1) {
+    ambientDots.push({
+      x: Math.random() * width,
+      y: random(height * 0.48, height * 1.04),
+      size: random(0.45, 1.65),
+      phase: random(0, TAU),
+      speed: random(0.005, 0.022),
+      alpha: random(0.07, 0.28),
+      drift: random(-0.025, 0.025),
+    });
+  }
+
+  const fireworkCount = Math.round(clamp(width / 260, 4, 8));
+  for (let i = 0; i < fireworkCount; i += 1) {
+    tinyFireworks.push({
+      x: random(width * 0.08, width * 0.92),
+      y: random(height * 0.12, height * 0.48),
+      radius: random(14, 34),
+      sparks: Math.round(random(7, 13)),
+      hue: Math.random() > 0.55 ? random(42, 58) : random(175, 205),
+      phase: random(0, TAU),
+      speed: random(0.0015, 0.0038),
+      alpha: random(0.08, 0.18),
+    });
+  }
+}
+
+function scheduleNextPopFirework(now) {
+  const finalMode = textMode === "forming";
+  nextPopFireworkAt = now + random(finalMode ? 680 : 1150, finalMode ? 1550 : 2600);
+}
+
+function spawnPopFirework(now) {
+  const sourceStar = skyStars.length && Math.random() < 0.68
+    ? skyStars[Math.floor(Math.random() * skyStars.length)]
+    : null;
+  const x = sourceStar ? sourceStar.x : random(width * 0.1, width * 0.9);
+  const y = sourceStar ? sourceStar.y : random(height * 0.11, height * 0.64);
+
+  popFireworks.push({
+    x,
+    y,
+    born: now,
+    duration: random(1200, 1850),
+    radius: random(20, 48),
+    sparks: Math.round(random(8, 16)),
+    hue: Math.random() > 0.45 ? random(42, 58) : random(170, 205),
+    rotate: random(0, TAU),
+    twinkle: random(0.7, 1.25),
+  });
+
+  while (popFireworks.length > 10) {
+    popFireworks.shift();
+  }
+}
+
+function drawPopFireworks(now) {
+  if (!nextPopFireworkAt || now > nextPopFireworkAt) {
+    spawnPopFirework(now);
+    scheduleNextPopFirework(now);
+  }
+
+  for (let i = popFireworks.length - 1; i >= 0; i -= 1) {
+    const firework = popFireworks[i];
+    const p = (now - firework.born) / firework.duration;
+
+    if (p >= 1) {
+      popFireworks.splice(i, 1);
+      continue;
+    }
+
+    const spread = 1 - Math.pow(1 - clamp(p, 0, 1), 3);
+    const fade = 1 - smoothstep(0.54, 1, p);
+    const flash = 1 - smoothstep(0, 0.2, p);
+    const radius = firework.radius * spread;
+    const alpha = (0.14 + flash * 0.22) * fade;
+
+    ctx.fillStyle = `hsla(${firework.hue}, 100%, 82%, ${alpha * 1.6})`;
+    ctx.beginPath();
+    ctx.arc(firework.x, firework.y, 1.15 + flash * 2.1, 0, TAU);
+    ctx.fill();
+
+    for (let j = 0; j < firework.sparks; j += 1) {
+      const angle = (j / firework.sparks) * TAU + firework.rotate + Math.sin(p * TAU) * 0.04;
+      const tail = radius * 0.44;
+      const x1 = firework.x + Math.cos(angle) * tail;
+      const y1 = firework.y + Math.sin(angle) * tail;
+      const x2 = firework.x + Math.cos(angle) * radius;
+      const y2 = firework.y + Math.sin(angle) * radius;
+      const localAlpha = alpha * (0.58 + Math.sin(j * firework.twinkle + p * TAU) * 0.22);
+
+      ctx.strokeStyle = `hsla(${firework.hue}, 100%, 78%, ${localAlpha})`;
+      ctx.lineWidth = 0.45 + (1 - p) * 0.55;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      ctx.fillStyle = `hsla(${firework.hue}, 100%, 86%, ${localAlpha * 1.35})`;
+      ctx.beginPath();
+      ctx.arc(x2, y2, 0.65 + (1 - p) * 0.72, 0, TAU);
+      ctx.fill();
+    }
+  }
+}
+
+function drawPaperPlaneLogo(x, y, size, angle, alpha, hue) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.scale(size / 120, size / 120);
+  ctx.globalAlpha *= alpha;
+  ctx.shadowColor = `hsla(${hue}, 100%, 72%, ${alpha * 0.56})`;
+  ctx.shadowBlur = 22;
+
+  const gradient = ctx.createLinearGradient(-58, -42, 68, 42);
+  gradient.addColorStop(0, `hsla(${hue}, 100%, 88%, 0.86)`);
+  gradient.addColorStop(0.48, "rgba(255, 255, 255, 0.9)");
+  gradient.addColorStop(1, "rgba(255, 224, 122, 0.82)");
+
+  ctx.fillStyle = gradient;
+  ctx.strokeStyle = `hsla(${hue}, 100%, 88%, 0.72)`;
+  ctx.lineWidth = 2.2;
+  ctx.lineJoin = "round";
+
+  ctx.beginPath();
+  ctx.moveTo(-64, -10);
+  ctx.lineTo(68, -46);
+  ctx.lineTo(14, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(-64, -10);
+  ctx.lineTo(14, 0);
+  ctx.lineTo(44, 44);
+  ctx.closePath();
+  ctx.fillStyle = `hsla(${hue + 12}, 100%, 74%, 0.58)`;
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "rgba(5, 22, 29, 0.4)";
+  ctx.lineWidth = 1.35;
+  ctx.beginPath();
+  ctx.moveTo(-64, -10);
+  ctx.lineTo(14, 0);
+  ctx.lineTo(68, -46);
+  ctx.moveTo(14, 0);
+  ctx.lineTo(44, 44);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function randomLogoEdgePoint(size, targetX, targetY) {
+  const side = Math.floor(random(0, 4));
+  const pad = size * 1.2;
+
+  if (side === 0) {
+    return { x: random(width * 0.08, width * 0.92), y: -pad };
+  }
+
+  if (side === 1) {
+    return { x: width + pad, y: random(height * 0.1, Math.max(height * 0.38, targetY - size * 1.8)) };
+  }
+
+  if (side === 2) {
+    return { x: random(width * 0.04, Math.max(width * 0.22, targetX - size * 2.2)), y: height + pad };
+  }
+
+  return { x: -pad, y: random(height * 0.12, height * 0.82) };
+}
+
+function createFinalLogoFlight(targetX, targetY, size, finalAngle, hue, alpha, delay, duration, pace) {
+  const start = randomLogoEdgePoint(size, targetX, targetY);
+  const angleToTarget = Math.atan2(targetY - start.y, targetX - start.x);
+  const distance = Math.hypot(targetX - start.x, targetY - start.y);
+  const side = Math.random() > 0.5 ? 1 : -1;
+  const arc = clamp(distance * random(0.08, 0.18), 34, 140) * side;
+  const normalX = Math.cos(angleToTarget + Math.PI / 2);
+  const normalY = Math.sin(angleToTarget + Math.PI / 2);
+  const lift = random(18, 56);
+
+  return {
+    startX: start.x,
+    startY: start.y,
+    control1X: start.x + Math.cos(angleToTarget) * distance * 0.24 + normalX * arc,
+    control1Y: start.y + Math.sin(angleToTarget) * distance * 0.24 + normalY * arc - lift,
+    control2X: targetX - Math.cos(angleToTarget) * distance * 0.34 - normalX * arc * 0.24,
+    control2Y: targetY - Math.sin(angleToTarget) * distance * 0.34 - normalY * arc * 0.24 - lift * 0.42,
+    targetX,
+    targetY,
+    size,
+    finalAngle,
+    hue,
+    alpha,
+    delay,
+    duration,
+    phase: random(0, TAU),
+    pace,
+    bob: random(size * 0.055, size * 0.11),
+    bank: random(0.08, 0.18),
+  };
+}
+
+function logoTravelFor(logo, p) {
+  if (logo.pace === "fast") {
+    return easeOut(p);
+  }
+
+  return easeInOut(p);
+}
+
+function logoPathPoint(logo, p) {
+  const travel = logoTravelFor(logo, clamp(p, 0, 1));
+  return {
+    x: cubic(logo.startX, logo.control1X, logo.control2X, logo.targetX, travel),
+    y: cubic(logo.startY, logo.control1Y, logo.control2Y, logo.targetY, travel),
+  };
+}
+
+function resetFinalLogoFlights(now) {
+  finalLogoFlights.length = 0;
+
+  const margin = clamp(Math.min(width, height) * 0.045, 24, 58);
+  const big = clamp(Math.min(width, height) * 0.15, 72, 124);
+  const small = big * 0.56;
+
+  finalLogoFlights.push(
+    createFinalLogoFlight(
+      width - margin - big * 0.5,
+      height - margin - big * 0.42,
+      big,
+      -0.28,
+      174,
+      0.88,
+      420,
+      1850,
+      "fast",
+    ),
+    createFinalLogoFlight(
+      width - margin - big * 1.28,
+      height - margin - big * 0.9,
+      small,
+      -0.16,
+      48,
+      0.7,
+      880,
+      3600,
+      "slow",
+    ),
+  );
+}
+
+function drawFinalLogos(now) {
+  if (textMode !== "forming") {
+    return;
+  }
+
+  const age = now - textStartedAt;
+  if (finalLogoFlights.length < 2) {
+    resetFinalLogoFlights(textStartedAt || now);
+  }
+
+  const breathe = 0.76 + easeInOut((Math.sin(now * 0.00108) + 1) * 0.5) * 0.24;
+  const floatX = Math.sin(now * 0.00072) * 2.2;
+  const floatY = Math.cos(now * 0.00058) * 1.8;
+  const logoVisibleTipAngle = Math.atan2(-10, -64);
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+
+  for (let i = 0; i < finalLogoFlights.length; i += 1) {
+    const logo = finalLogoFlights[i];
+    const p = clamp((age - logo.delay) / logo.duration, 0, 1);
+    const settle = smoothstep(0.78, 1, p);
+    const flying = p < 1;
+    const point = logoPathPoint(logo, p);
+    const before = logoPathPoint(logo, Math.max(0, p - 0.018));
+    const after = logoPathPoint(logo, Math.min(1, p + 0.018));
+    const dx = after.x - before.x;
+    const dy = after.y - before.y;
+    const normalAngle = Math.atan2(dy, dx) + Math.PI / 2;
+    const glide = Math.sin(p * TAU * (logo.pace === "fast" ? 1.65 : 1.12) + logo.phase) * logo.bob * (1 - settle);
+    const x = point.x + Math.cos(normalAngle) * glide + (i === 0 ? floatX : -floatX * 0.55) * settle;
+    const y = point.y + Math.sin(normalAngle) * glide + (i === 0 ? floatY : -floatY * 0.72) * settle;
+    const flightAngle = Math.atan2(dy, dx) - logoVisibleTipAngle;
+    const bank = Math.sin(p * TAU * 2.2 + logo.phase) * logo.bank * (1 - settle);
+    const angle = lerp(flightAngle + bank, logo.finalAngle, settle);
+    const alpha = smoothstep(0, 0.18, p) * breathe * logo.alpha;
+    const size = logo.size * (flying ? lerp(0.78, 1, smoothstep(0, 0.86, p)) : 1);
+
+    if (flying && p > 0.08) {
+      ctx.save();
+      ctx.globalAlpha *= alpha * (1 - settle);
+      ctx.strokeStyle = `hsla(${logo.hue}, 100%, 78%, 0.18)`;
+      ctx.lineWidth = Math.max(0.8, logo.size * 0.016);
+      ctx.beginPath();
+
+      for (let j = 0; j <= 5; j += 1) {
+        const q = Math.max(0, p - (5 - j) * 0.032);
+        const trailPoint = logoPathPoint(logo, q);
+        if (j === 0) {
+          ctx.moveTo(trailPoint.x, trailPoint.y);
+        } else {
+          ctx.lineTo(trailPoint.x, trailPoint.y);
+        }
+      }
+
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    drawPaperPlaneLogo(x, y, size, angle, alpha, logo.hue);
+  }
+
+  ctx.restore();
+}
+
+async function startCamera() {
+  cameraNotice.hidden = true;
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    cameraNotice.hidden = false;
+    setStatus("摄像头不可用");
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: "user",
+      },
+    });
+
+    camera.srcObject = stream;
+    await camera.play();
+    cameraReady = true;
+    cameraStartedAt = performance.now();
+    previousFrame = null;
+    backgroundFrame = null;
+    motionHistory = [];
+    lastMotionBlob = null;
+    previousMotionBlobs = [];
+    recentPlaneTriggers.length = 0;
+    lastPlaneDotAt = -9000;
+    lastInboundPlaneAt = -9000;
+    screenPlanesEmptySince = 0;
+    finalLogoFlights.length = 0;
+    lastPaperCandidateAt = performance.now();
+    setStatus("等待纸飞机");
+    cameraButton.textContent = "摄像头已开启";
+  } catch (error) {
+    console.warn(error);
+    cameraNotice.hidden = false;
+    setStatus("摄像头暂未开启");
+  }
+}
+
+function extractMotionComponents(mask, minPixels) {
+  const totalPixels = detectW * detectH;
+  const visited = new Uint8Array(totalPixels);
+  const components = [];
+
+  for (let start = 0; start < totalPixels; start += 1) {
+    if (!mask[start] || visited[start]) {
+      continue;
+    }
+
+    const stack = [start];
+    visited[start] = 1;
+    let count = 0;
+    let sumX = 0;
+    let sumY = 0;
+    let minX = detectW;
+    let minY = detectH;
+    let maxX = 0;
+    let maxY = 0;
+
+    while (stack.length) {
+      const index = stack.pop();
+      const x = index % detectW;
+      const y = (index / detectW) | 0;
+
+      count += 1;
+      sumX += x;
+      sumY += y;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+
+      for (let dy = -1; dy <= 1; dy += 1) {
+        const ny = y + dy;
+        if (ny < 0 || ny >= detectH) {
+          continue;
+        }
+
+        for (let dx = -1; dx <= 1; dx += 1) {
+          if (dx === 0 && dy === 0) {
+            continue;
+          }
+
+          const nx = x + dx;
+          if (nx < 0 || nx >= detectW) {
+            continue;
+          }
+
+          const next = ny * detectW + nx;
+          if (mask[next] && !visited[next]) {
+            visited[next] = 1;
+            stack.push(next);
+          }
+        }
+      }
+    }
+
+    if (count >= minPixels) {
+      components.push({ count, sumX, sumY, minX, minY, maxX, maxY });
+    }
+  }
+
+  components.sort((a, b) => b.count - a.count);
+  return components.slice(0, 6);
+}
+
+function findPreviousMotionBlob(x, y, now) {
+  let best = null;
+  let bestDistance = Infinity;
+
+  for (const blob of previousMotionBlobs) {
+    if (now - blob.at > 640) {
+      continue;
+    }
+
+    const distance = Math.hypot(x - blob.x, y - blob.y);
+    if (distance < bestDistance) {
+      best = blob;
+      bestDistance = distance;
+    }
+  }
+
+  return bestDistance < Math.max(90, Math.min(width, height) * 0.18) ? best : null;
+}
+
+function canTriggerPlaneAt(x, y, boxW, boxH, now) {
+  for (let i = recentPlaneTriggers.length - 1; i >= 0; i -= 1) {
+    if (now - recentPlaneTriggers[i].at > 1450) {
+      recentPlaneTriggers.splice(i, 1);
+    }
+  }
+
+  const suppressionRadius = Math.max(72, Math.max(boxW * width, boxH * height) * 1.45);
+  for (const trigger of recentPlaneTriggers) {
+    if (Math.hypot(x - trigger.x, y - trigger.y) < suppressionRadius) {
+      return false;
+    }
+  }
+
+  recentPlaneTriggers.push({ x, y, at: now });
+  return true;
+}
+
+function isLikelyPaperPlaneComponent(component, boxW, boxH, componentRatio, sensitivity) {
+  const boxArea = boxW * boxH;
+  const aspect = Math.max(boxW, boxH) / Math.max(0.001, Math.min(boxW, boxH));
+  const boxPixels =
+    Math.max(1, component.maxX - component.minX + 1) *
+    Math.max(1, component.maxY - component.minY + 1);
+  const fillRatio = component.count / boxPixels;
+  const weightedArea = componentRatio * sensitivity;
+
+  if (boxArea > 0.22 && aspect < 2.15) {
+    return false;
+  }
+
+  if (weightedArea > 0.085 && aspect < 2.35) {
+    return false;
+  }
+
+  if (fillRatio > 0.68 && aspect < 1.55) {
+    return false;
+  }
+
+  return aspect > 1.22 || fillRatio < 0.58 || boxArea < 0.035;
+}
+
+function analyzeCamera(now) {
+  if (!cameraReady || camera.readyState < 2 || now - cameraStartedAt < 850) {
+    return;
+  }
+
+  detectCtx.drawImage(camera, 0, 0, detectW, detectH);
+  const pixels = detectCtx.getImageData(0, 0, detectW, detectH).data;
+  const gray = new Uint8Array(detectW * detectH);
+  const motionMask = new Uint8Array(detectW * detectH);
+
+  let motionCount = 0;
+  let sumX = 0;
+  let sumY = 0;
+  let minX = detectW;
+  let minY = detectH;
+  let maxX = 0;
+  let maxY = 0;
+  const sensitivity = Number.parseFloat(sensitivityInput.value);
+  const threshold = 42 / sensitivity;
+
+  for (let y = 0; y < detectH; y += 1) {
+    for (let x = 0; x < detectW; x += 1) {
+      const index = y * detectW + x;
+      const pixel = index * 4;
+      const value = (pixels[pixel] * 0.299 + pixels[pixel + 1] * 0.587 + pixels[pixel + 2] * 0.114) | 0;
+      gray[index] = value;
+
+      if (!previousFrame) {
+        continue;
+      }
+
+      const diff = Math.abs(value - previousFrame[index]);
+      if (diff > threshold) {
+        motionMask[index] = 1;
+        motionCount += 1;
+        sumX += x;
+        sumY += y;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
+  }
+
+  const totalPixels = detectW * detectH;
+  let foregroundCount = 0;
+  const foregroundThreshold = 34 / Math.sqrt(sensitivity);
+
+  if (backgroundFrame) {
+    for (let i = 0; i < totalPixels; i += 1) {
+      if (Math.abs(gray[i] - backgroundFrame[i]) > foregroundThreshold) {
+        foregroundCount += 1;
+      }
+    }
+  } else {
+    backgroundFrame = gray.slice();
+  }
+
+  const ratio = motionCount / totalPixels;
+  const foregroundRatio = foregroundCount / totalPixels;
+  motionHistory.push(ratio);
+  if (motionHistory.length > 8) {
+    motionHistory.shift();
+  }
+
+  const previousAverage =
+    motionHistory.slice(0, -1).reduce((total, item) => total + item, 0) /
+    Math.max(motionHistory.length - 1, 1);
+  const growth = ratio - previousAverage;
+  const weightedRatio = ratio * sensitivity;
+  const burst = weightedRatio > 0.12 || (weightedRatio > 0.052 && growth > 0.014);
+  const occupied = foregroundRatio * Math.sqrt(sensitivity) > 0.026;
+
+  if (weightedRatio > 0.022) {
+    lastMotionAt = now;
+  }
+
+  if (occupied || weightedRatio > 0.026) {
+    lastPaperCandidateAt = now;
+  }
+
+  if (backgroundFrame && !occupied && weightedRatio < 0.014 && now - lastTriggerAt > 2600) {
+    for (let i = 0; i < totalPixels; i += 1) {
+      backgroundFrame[i] = backgroundFrame[i] * 0.96 + gray[i] * 0.04;
+    }
+  }
+
+  previousFrame = gray;
+
+  const nextMotionBlobs = [];
+  if (motionCount > 0) {
+    const components = extractMotionComponents(motionMask, Math.max(8, Math.round(totalPixels * 0.0012)));
+
+    for (const component of components) {
+      const normalizedX = component.sumX / component.count / detectW;
+      const normalizedY = component.sumY / component.count / detectH;
+      const screenX = width - normalizedX * width;
+      const screenY = normalizedY * height;
+      const boxW = Math.max(1, component.maxX - component.minX + 1) / detectW;
+      const boxH = Math.max(1, component.maxY - component.minY + 1) / detectH;
+      const componentRatio = component.count / totalPixels;
+      const previousBlob = findPreviousMotionBlob(screenX, screenY, now);
+      const velocityX = previousBlob ? screenX - previousBlob.x : 0;
+      const velocityY = previousBlob ? screenY - previousBlob.y : 0;
+      const velocitySpeed = Math.hypot(velocityX, velocityY);
+      const componentBurst =
+        componentRatio * sensitivity > 0.009 ||
+        (burst && componentRatio * sensitivity > 0.0045);
+      const likelyPaperPlane = isLikelyPaperPlaneComponent(component, boxW, boxH, componentRatio, sensitivity);
+      const inboundPlaneMotion = likelyPaperPlane && (componentBurst || velocitySpeed > Math.min(width, height) * 0.018);
+
+      nextMotionBlobs.push({ x: screenX, y: screenY, ratio: componentRatio, boxW, boxH, at: now });
+
+      if (inboundPlaneMotion) {
+        lastInboundPlaneAt = now;
+      }
+
+      if (likelyPaperPlane && componentBurst && canTriggerPlaneAt(screenX, screenY, boxW, boxH, now)) {
+        const entryScale = clamp(0.76 + Math.sqrt(Math.max(boxW * boxH, componentRatio)) * 2.8, 0.78, 1.76);
+
+        triggerPlaneField(screenX, screenY, false, {
+          single: true,
+          entrySpeed: clamp(velocitySpeed / Math.max(width, height) * 18, 0, 1),
+          entryScale,
+        });
+      }
+    }
+
+    if (nextMotionBlobs.length) {
+      const largestBlob = nextMotionBlobs.reduce((best, item) => (item.ratio > best.ratio ? item : best), nextMotionBlobs[0]);
+      lastMotionBlob = largestBlob;
+    }
+  }
+
+  previousMotionBlobs = nextMotionBlobs;
+}
+
+function makePlaneParticles(count) {
+  const points = [];
+  const tail = { x: -88, y: 0 };
+  const nose = { x: 114, y: 0 };
+  const leftWing = { x: -54, y: -57 };
+  const rightWing = { x: -54, y: 57 };
+  const leftFold = { x: -20, y: -18 };
+  const rightFold = { x: -20, y: 18 };
+
+  function sampleTriangle(a, b, c) {
+    let r1 = Math.random();
+    let r2 = Math.random();
+    if (r1 + r2 > 1) {
+      r1 = 1 - r1;
+      r2 = 1 - r2;
+    }
+
+    return {
+      x: a.x + r1 * (b.x - a.x) + r2 * (c.x - a.x),
+      y: a.y + r1 * (b.y - a.y) + r2 * (c.y - a.y),
+    };
+  }
+
+  function addPoint(x, y, kind = "surface", jitter = 1) {
+    const edge = kind === "edge" || kind === "spine";
+    points.push({
+      lx: x + random(-jitter, jitter),
+      ly: y + random(-jitter, jitter),
+      size: edge ? random(0.95, 2.15) : random(0.62, 1.5),
+      driftX: random(-0.7, 0.7),
+      driftY: random(-0.62, 0.62),
+      phase: random(0, TAU),
+      warmth: Math.random(),
+      edge,
+      kind,
+    });
+  }
+
+  function addLine(a, b, segments, kind = "edge") {
+    for (let i = 0; i <= segments; i += 1) {
+      const t = i / segments;
+      addPoint(lerp(a.x, b.x, t), lerp(a.y, b.y, t), kind, kind === "spine" ? 0.55 : 0.9);
+    }
+  }
+
+  const surfaceCount = Math.max(54, Math.round(count * 0.48));
+  for (let i = 0; i < surfaceCount; i += 1) {
+    const upperWing = Math.random() > 0.5;
+    const point = upperWing
+      ? sampleTriangle(tail, nose, leftWing)
+      : sampleTriangle(tail, nose, rightWing);
+    const crease = upperWing ? leftFold : rightFold;
+    const pullToCrease = Math.pow(Math.random(), 2) * 0.24;
+    addPoint(
+      lerp(point.x, crease.x, pullToCrease),
+      lerp(point.y, crease.y, pullToCrease),
+      "surface",
+      1.35,
+    );
+  }
+
+  addLine(tail, nose, 28, "spine");
+  addLine(nose, leftWing, 20, "edge");
+  addLine(nose, rightWing, 20, "edge");
+  addLine(tail, leftWing, 14, "edge");
+  addLine(tail, rightWing, 14, "edge");
+  addLine(leftFold, nose, 18, "fold");
+  addLine(rightFold, nose, 18, "fold");
+  addLine(tail, leftFold, 10, "fold");
+  addLine(tail, rightFold, 10, "fold");
+
+  return points;
+}
+
+function chooseDepthPoint(startX, startY) {
+  let best = null;
+  let bestDistance = 0;
+  const minDistance = Math.min(width, height) * 0.28;
+
+  for (let i = 0; i < 8; i += 1) {
+    const edgeBias = Math.random();
+    const x = edgeBias < 0.32
+      ? random(width * 0.06, width * 0.24)
+      : edgeBias < 0.64
+        ? random(width * 0.76, width * 0.94)
+        : random(width * 0.16, width * 0.84);
+    const y = Math.random() < 0.62
+      ? random(height * 0.12, height * 0.56)
+      : random(height * 0.56, height * 0.84);
+    const distance = Math.hypot(x - startX, y - startY);
+
+    if (distance > bestDistance) {
+      best = { x, y };
+      bestDistance = distance;
+    }
+
+    if (distance > minDistance) {
+      return { x, y };
+    }
+  }
+
+  return best ?? { x: random(width * 0.12, width * 0.88), y: random(height * 0.12, height * 0.82) };
+}
+
+function randomSparkLanding() {
+  const edgeBias = Math.random();
+  const x = edgeBias < 0.24
+    ? random(width * 0.02, width * 0.2)
+    : edgeBias < 0.48
+      ? random(width * 0.8, width * 0.98)
+      : random(width * 0.06, width * 0.94);
+  const y = Math.random() < 0.22
+    ? random(height * 0.05, height * 0.2)
+    : random(height * 0.2, height * 0.94);
+
+  return { x, y };
+}
+
+function triggerPlaneField(x = width * 0.5, y = height * 0.48, manual = true, options = {}) {
+  const now = performance.now();
+  lastTriggerAt = now;
+  lastMotionAt = now;
+  screenPlanesEmptySince = 0;
+  finalLogoFlights.length = 0;
+  textMode = "scattering";
+  setStatus(manual ? "测试触发" : "捕捉到纸飞机");
+
+  for (const spark of sparks) {
+    if (spark.target) {
+      spark.target = null;
+      spark.persistent = false;
+      spark.vx += random(-2.2, 2.2);
+      spark.vy += random(-1.8, 1.8);
+      spark.alpha = Math.max(spark.alpha, random(0.36, 0.62));
+    }
+  }
+
+  shockwaves.push(
+    { x, y, born: now, duration: 940, radius: Math.max(width, height) * 0.72, twist: random(-1, 1) },
+    { x: x + random(-40, 40), y: y + random(-30, 30), born: now + 80, duration: 1220, radius: Math.max(width, height) * 0.52, twist: random(-1, 1) },
+  );
+
+  const batch = options.batchCount ?? 1;
+  for (let i = 0; i < batch; i += 1) {
+    const isLeadPlane = i === 0;
+    const startSpread = batch === 1 ? 0 : Math.min(width, height) * random(0.08, 0.25);
+    const spreadAngle = random(0, TAU);
+    const startX = x + Math.cos(spreadAngle) * startSpread + (batch === 1 ? 0 : random(-width * 0.04, width * 0.04));
+    const startY = y + Math.sin(spreadAngle) * startSpread + (batch === 1 ? 0 : random(-height * 0.035, height * 0.035));
+    const depthPoint = chooseDepthPoint(startX, startY);
+    const vanishingX = depthPoint.x;
+    const vanishingY = depthPoint.y;
+    const pathAngle = Math.atan2(vanishingY - startY, vanishingX - startX);
+    const distance = Math.hypot(vanishingX - startX, vanishingY - startY);
+    const side = i % 2 === 0 ? -1 : 1;
+    const arc = random(0.06, 0.2) * Math.min(width, height) * side;
+    const normalX = Math.cos(pathAngle + Math.PI / 2);
+    const normalY = Math.sin(pathAngle + Math.PI / 2);
+    const entrySpeed = options.entrySpeed ?? 0.45;
+    const entryPush = Math.max(80, distance * random(0.16, 0.26)) * lerp(0.82, 1.18, entrySpeed);
+
+    planes.push({
+      born: now + (isLeadPlane ? 0 : 560 + i * random(140, 220) + random(0, 220)),
+      duration: random(3200, 5200),
+      startX,
+      startY,
+      control1X: startX + Math.cos(pathAngle) * entryPush + normalX * arc * 0.28,
+      control1Y: startY + Math.sin(pathAngle) * entryPush + normalY * arc * 0.28 - random(6, 24),
+      control2X: vanishingX - Math.cos(pathAngle) * distance * random(0.18, 0.28) - normalX * arc * random(0.22, 0.55),
+      control2Y: vanishingY - Math.sin(pathAngle) * distance * random(0.18, 0.28) - normalY * arc * random(0.22, 0.55),
+      vanishingX,
+      vanishingY,
+      wobble: random(0.18, 0.55),
+      bank: random(0.12, 0.38) * side,
+      scale: clamp(options.entryScale ?? (isLeadPlane ? random(1.22, 1.62) : random(0.68, 1.16)), 0.68, 1.86),
+      hue: random(170, 205),
+      particles: makePlaneParticles(Math.round(isLeadPlane ? random(96, 118) : random(72, 98))),
+      released: false,
+    });
+  }
+
+  const entrySparkCount = batch === 1 ? 18 : 34;
+  for (let i = 0; i < entrySparkCount; i += 1) {
+    const a = random(0, TAU);
+    const r = Math.pow(Math.random(), 0.8) * Math.min(width, height) * 0.08;
+    addSpark({
+      x: x + Math.cos(a) * r,
+      y: y + Math.sin(a) * r,
+      vx: Math.cos(a) * random(0.04, 0.38),
+      vy: Math.sin(a) * random(0.04, 0.38),
+      size: random(0.5, 1.35),
+      alpha: random(0.08, 0.22),
+    });
+  }
+}
+
+function cubic(a, b, c, d, t) {
+  const mt = 1 - t;
+  return mt * mt * mt * a + 3 * mt * mt * t * b + 3 * mt * t * t * c + t * t * t * d;
+}
+
+function cubicDerivative(a, b, c, d, t) {
+  const mt = 1 - t;
+  return 3 * mt * mt * (b - a) + 6 * mt * t * (c - b) + 3 * t * t * (d - c);
+}
+
+function getPlanePose(plane, p) {
+  const t = clamp(p, 0, 1);
+  const travel = easeInOut(t);
+  const x = cubic(plane.startX, plane.control1X, plane.control2X, plane.vanishingX, travel);
+  const y =
+    cubic(plane.startY, plane.control1Y, plane.control2Y, plane.vanishingY, travel) +
+    Math.sin(t * Math.PI * 2.35 + plane.wobble * 8) * 10 * (1 - t);
+  const dx = cubicDerivative(plane.startX, plane.control1X, plane.control2X, plane.vanishingX, travel);
+  const dy = cubicDerivative(plane.startY, plane.control1Y, plane.control2Y, plane.vanishingY, travel);
+  const angle = Math.atan2(dy, dx);
+  const scale = Math.max(0.015, Math.pow(1 - t, 1.56) * plane.scale + 0.018);
+  const bank = Math.sin(t * Math.PI * 2.15 + plane.wobble * 7) * plane.bank * (1 - t * 0.5);
+
+  return { x, y, angle, scale, bank };
+}
+
+function transformPlaneLocal(plane, p, lx, ly) {
+  const pose = getPlanePose(plane, p);
+  const bankedY = ly * (1 - Math.abs(pose.bank) * 0.42);
+  const bankedX = lx + ly * pose.bank * 0.24;
+  const cos = Math.cos(pose.angle);
+  const sin = Math.sin(pose.angle);
+
+  return {
+    x: pose.x + (bankedX * cos - bankedY * sin) * pose.scale,
+    y: pose.y + (bankedX * sin + bankedY * cos) * pose.scale,
+    scale: pose.scale,
+    angle: pose.angle,
+  };
+}
+
+function getPlanePoint(plane, p, point) {
+  const breakAmount = smoothstep(0.66, 0.98, p);
+  const scatter = 124 * breakAmount * breakAmount;
+  const lx = point.lx + point.driftX * scatter + Math.sin(point.phase + p * 15) * 3.2 * breakAmount;
+  const ly = point.ly + point.driftY * scatter + Math.cos(point.phase + p * 13) * 2.9 * breakAmount;
+  const place = transformPlaneLocal(plane, p, lx, ly);
+  const edgeBoost = point.edge ? 0.92 : 0.72;
+
+  return {
+    x: place.x,
+    y: place.y,
+    size: point.size * (0.52 + place.scale * 1.75 + breakAmount * 0.5),
+    alpha: Math.max(0, 1 - smoothstep(0.78, 1, p)) * edgeBoost * (0.64 + point.warmth * 0.32),
+    warmth: point.warmth,
+    edge: point.edge,
+    kind: point.kind,
+  };
+}
+
+function drawPlaneFrame(plane, p) {
+  const t = clamp(p, 0, 1);
+  const dissolve = smoothstep(0.72, 1, t);
+  if (dissolve > 0.95) {
+    return;
+  }
+
+  const key = {
+    nose: { x: 114, y: 0 },
+    tail: { x: -88, y: 0 },
+    leftWing: { x: -54, y: -57 },
+    rightWing: { x: -54, y: 57 },
+    leftFold: { x: -20, y: -18 },
+    rightFold: { x: -20, y: 18 },
+  };
+
+  const alpha = (1 - dissolve) * (0.055 + (1 - t) * 0.13);
+  ctx.strokeStyle = `hsla(${plane.hue}, 100%, 82%, ${alpha})`;
+  ctx.lineWidth = Math.max(0.45, 0.72 * getPlanePose(plane, t).scale);
+  ctx.beginPath();
+  const nose = transformPlaneLocal(plane, t, key.nose.x, key.nose.y);
+  const tail = transformPlaneLocal(plane, t, key.tail.x, key.tail.y);
+  const leftWing = transformPlaneLocal(plane, t, key.leftWing.x, key.leftWing.y);
+  const rightWing = transformPlaneLocal(plane, t, key.rightWing.x, key.rightWing.y);
+  const leftFold = transformPlaneLocal(plane, t, key.leftFold.x, key.leftFold.y);
+  const rightFold = transformPlaneLocal(plane, t, key.rightFold.x, key.rightFold.y);
+
+  ctx.moveTo(nose.x, nose.y);
+  ctx.lineTo(leftWing.x, leftWing.y);
+  ctx.lineTo(tail.x, tail.y);
+  ctx.lineTo(rightWing.x, rightWing.y);
+  ctx.lineTo(nose.x, nose.y);
+  ctx.moveTo(tail.x, tail.y);
+  ctx.lineTo(nose.x, nose.y);
+  ctx.moveTo(leftFold.x, leftFold.y);
+  ctx.lineTo(nose.x, nose.y);
+  ctx.moveTo(rightFold.x, rightFold.y);
+  ctx.lineTo(nose.x, nose.y);
+  ctx.stroke();
+}
+
+function drawPlaneTrail(plane, p) {
+  const t = clamp(p, 0, 1);
+  const start = Math.max(0, t - 0.19);
+  const samples = 9;
+  ctx.beginPath();
+
+  for (let i = 0; i <= samples; i += 1) {
+    const q = lerp(start, t, i / samples);
+    const pose = getPlanePose(plane, q);
+    if (i === 0) {
+      ctx.moveTo(pose.x, pose.y);
+    } else {
+      ctx.lineTo(pose.x, pose.y);
+    }
+  }
+
+  ctx.strokeStyle = `hsla(${plane.hue}, 100%, 76%, ${(1 - t) * 0.18})`;
+  ctx.lineWidth = 1.4 + (1 - t) * 3.2;
+  ctx.stroke();
+}
+
+function addSpark(options) {
+  sparks.push({
+    x: options.x,
+    y: options.y,
+    vx: options.vx ?? random(-0.35, 0.35),
+    vy: options.vy ?? random(-0.35, 0.35),
+    size: options.size ?? random(0.7, 2.4),
+    alpha: options.alpha ?? random(0.22, 0.72),
+    phase: random(0, TAU),
+    speed: options.speed ?? random(0.009, 0.032),
+    target: null,
+    driftTarget: options.driftTarget ?? null,
+    persistent: options.persistent ?? false,
+    hue: options.hue ?? null,
+    windAmp: options.windAmp ?? 0,
+    windPhase: options.windPhase ?? random(0, TAU),
+    windSpeed: options.windSpeed ?? random(0.00022, 0.00048),
+    warmth: options.warmth ?? Math.random(),
+  });
+}
+
+function releasePlane(plane) {
+  const pose = getPlanePose(plane, 1);
+  const finalDotHues = [46, 54, 165, 184, 198, 212, 142, 28];
+  addSpark({
+    x: pose.x + random(-2.5, 2.5),
+    y: pose.y + random(-2.5, 2.5),
+    vx: 0,
+    vy: 0,
+    size: random(1.35, 2.85),
+    alpha: random(0.46, 0.78),
+    speed: random(0.0035, 0.0065),
+    persistent: true,
+    hue: finalDotHues[Math.floor(Math.random() * finalDotHues.length)],
+    warmth: Math.random() > 0.5 ? random(0.72, 1) : random(0.18, 0.52),
+  });
+  lastPlaneDotAt = performance.now();
+}
+
+function updatePlanes(now) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+
+  for (let i = planes.length - 1; i >= 0; i -= 1) {
+    const plane = planes[i];
+    const p = (now - plane.born) / plane.duration;
+
+    if (p < 0) {
+      continue;
+    }
+
+    if (p > 0.98 && !plane.released) {
+      releasePlane(plane);
+      plane.released = true;
+    }
+
+    if (p > 1.06) {
+      planes.splice(i, 1);
+      continue;
+    }
+
+    const pose = getPlanePose(plane, p);
+    drawPlaneTrail(plane, p);
+
+    const glow = ctx.createRadialGradient(pose.x, pose.y, 0, pose.x, pose.y, 118 * (1 - p) + 22);
+    glow.addColorStop(0, `hsla(${plane.hue}, 100%, 74%, ${0.09 * (1 - p)})`);
+    glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(pose.x, pose.y, 122 * (1 - p) + 24, 0, TAU);
+    ctx.fill();
+    drawPlaneFrame(plane, p);
+
+    for (const point of plane.particles) {
+      const place = getPlanePoint(plane, p, point);
+      if (place.alpha <= 0.01) {
+        continue;
+      }
+
+      const flicker = 0.72 + Math.sin(point.phase + now * 0.009) * 0.28;
+      const hue = place.edge ? lerp(plane.hue, 48, place.warmth * 0.18) : lerp(plane.hue, 58, place.warmth * 0.28);
+      const lightness = place.edge ? lerp(76, 94, place.warmth) : lerp(58, 82, place.warmth);
+      ctx.fillStyle = `hsla(${hue}, 100%, ${lightness}%, ${place.alpha * flicker})`;
+      ctx.beginPath();
+      ctx.arc(place.x, place.y, place.size, 0, TAU);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
+
+function updateSparks(now, dt) {
+  const maxSparks = 4800;
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+
+  for (let i = sparks.length - 1; i >= 0; i -= 1) {
+    const spark = sparks[i];
+    spark.phase += spark.speed * dt * (spark.persistent || spark.target ? 2.4 : 18);
+
+    if (spark.target) {
+      const textAge = Math.max(0, now - textStartedAt);
+      const gatherEase = smoothstep(0, 4200, textAge);
+      const breezeEase = smoothstep(2500, 7000, textAge);
+      const windPhase = spark.windPhase + now * spark.windSpeed;
+      const windX = Math.sin(windPhase + spark.target.y * 0.012) * spark.windAmp * breezeEase;
+      const windY =
+        Math.cos(windPhase * 0.78 + spark.target.x * 0.008) *
+        spark.windAmp *
+        0.48 *
+        breezeEase;
+      const targetX = spark.target.x + windX;
+      const targetY = spark.target.y + windY;
+      const gatherSpeed = lerp(0.016, 0.026, gatherEase);
+
+      spark.x += (targetX - spark.x) * gatherSpeed * dt;
+      spark.y += (targetY - spark.y) * gatherSpeed * dt;
+      spark.vx *= 0.82;
+      spark.vy *= 0.82;
+      spark.alpha = lerp(spark.alpha, 0.92, 0.011 * dt);
+    } else {
+      if (spark.persistent) {
+        spark.vx *= Math.pow(0.92, dt);
+        spark.vy *= Math.pow(0.92, dt);
+        spark.x += Math.sin(spark.phase * 0.7) * 0.012 * dt;
+        spark.y += Math.cos(spark.phase * 0.9) * 0.012 * dt;
+        spark.alpha = lerp(spark.alpha, 0.5, 0.01 * dt);
+      } else if (spark.driftTarget) {
+        spark.vx += (spark.driftTarget.x - spark.x) * 0.00062 * dt;
+        spark.vy += (spark.driftTarget.y - spark.y) * 0.00062 * dt;
+
+        if (Math.hypot(spark.driftTarget.x - spark.x, spark.driftTarget.y - spark.y) < 22) {
+          spark.driftTarget = null;
+        }
+      } else {
+        spark.x += spark.vx * dt;
+        spark.y += spark.vy * dt;
+        spark.vx *= Math.pow(0.988, dt);
+        spark.vy *= Math.pow(0.988, dt);
+        spark.alpha *= Math.pow(0.9986, dt);
+      }
+    }
+
+    if (spark.x < -80) spark.x = width + 80;
+    if (spark.x > width + 80) spark.x = -80;
+    if (spark.y < -80) spark.y = height + 80;
+    if (spark.y > height + 80) spark.y = -80;
+
+    const pulse = (Math.sin(spark.phase) + 1) * 0.5;
+    const flicker = spark.persistent || spark.target
+      ? 0.56 + easeInOut(pulse) * 0.24
+      : 0.48 + Math.pow(pulse, 2.4) * 0.78;
+    const targetBoost = spark.target ? 1.38 : spark.persistent ? 1.08 : 1;
+    const alpha = clamp(spark.alpha * flicker, 0, spark.persistent ? 0.66 : 1);
+    const hue = spark.hue ?? (spark.warmth > 0.72 ? 48 : lerp(168, 198, spark.warmth));
+
+    if (spark.persistent) {
+      const glow = ctx.createRadialGradient(spark.x, spark.y, 0, spark.x, spark.y, spark.size * 3.6);
+      glow.addColorStop(0, `hsla(${hue}, 100%, 78%, ${alpha * 0.12})`);
+      glow.addColorStop(0.5, `hsla(${hue}, 100%, 64%, ${alpha * 0.04})`);
+      glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(spark.x, spark.y, spark.size * 3.6, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = `hsla(${hue}, 100%, ${spark.target ? 78 : 68}%, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(spark.x, spark.y, spark.size * targetBoost * (0.86 + flicker * 0.32), 0, TAU);
+    ctx.fill();
+
+    if (!spark.target && !spark.persistent && spark.alpha < 0.025 && sparks.length > 260) {
+      sparks.splice(i, 1);
+    }
+  }
+
+  while (sparks.length > maxSparks) {
+    const removableIndex = sparks.findIndex((spark) => !spark.persistent && !spark.target);
+    if (removableIndex === -1) {
+      break;
+    }
+    sparks.splice(removableIndex, 1);
+  }
+
+  ctx.restore();
+}
+
+function drawGraduationSky(now) {
+  const sky = ctx.createLinearGradient(0, 0, 0, height);
+  sky.addColorStop(0, "#07111f");
+  sky.addColorStop(0.46, "#061b25");
+  sky.addColorStop(0.78, "#08271f");
+  sky.addColorStop(1, "#150f12");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, width, height);
+
+  const horizon = ctx.createRadialGradient(width * 0.5, height * 1.03, 0, width * 0.5, height * 1.02, height * 0.68);
+  horizon.addColorStop(0, "rgba(255, 214, 121, 0.34)");
+  horizon.addColorStop(0.35, "rgba(137, 255, 218, 0.14)");
+  horizon.addColorStop(1, "rgba(5, 14, 25, 0)");
+  ctx.fillStyle = horizon;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+
+  for (const star of skyStars) {
+    star.phase += star.speed;
+    star.x += star.drift;
+    if (star.x < -6) star.x = width + 6;
+    if (star.x > width + 6) star.x = -6;
+
+    const pulse = 0.42 + Math.pow((Math.sin(star.phase + now * 0.0006) + 1) * 0.5, 2.3) * 0.72;
+    const alpha = star.alpha * pulse;
+    ctx.fillStyle = `hsla(${star.hue}, 100%, 80%, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(star.x, star.y, star.size * (0.72 + pulse * 0.38), 0, TAU);
+    ctx.fill();
+
+    if (star.size > 1.45 && alpha > 0.25) {
+      ctx.strokeStyle = `hsla(${star.hue}, 100%, 84%, ${alpha * 0.28})`;
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(star.x - star.size * 2.4, star.y);
+      ctx.lineTo(star.x + star.size * 2.4, star.y);
+      ctx.moveTo(star.x, star.y - star.size * 2.4);
+      ctx.lineTo(star.x, star.y + star.size * 2.4);
+      ctx.stroke();
+    }
+  }
+
+  for (const firework of tinyFireworks) {
+    firework.phase += firework.speed;
+    const breathe = 0.45 + easeInOut((Math.sin(firework.phase) + 1) * 0.5) * 0.55;
+    const alpha = firework.alpha * breathe;
+
+    for (let i = 0; i < firework.sparks; i += 1) {
+      const angle = (i / firework.sparks) * TAU + Math.sin(firework.phase * 0.8) * 0.08;
+      const inner = firework.radius * 0.22;
+      const outer = firework.radius * (0.72 + 0.22 * Math.sin(firework.phase + i));
+      const x1 = firework.x + Math.cos(angle) * inner;
+      const y1 = firework.y + Math.sin(angle) * inner;
+      const x2 = firework.x + Math.cos(angle) * outer;
+      const y2 = firework.y + Math.sin(angle) * outer;
+
+      ctx.strokeStyle = `hsla(${firework.hue}, 100%, 78%, ${alpha})`;
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      ctx.fillStyle = `hsla(${firework.hue}, 100%, 84%, ${alpha * 1.4})`;
+      ctx.beginPath();
+      ctx.arc(x2, y2, 0.75 + breathe * 0.7, 0, TAU);
+      ctx.fill();
+    }
+  }
+
+  drawPopFireworks(now);
+
+  for (let i = 0; i < 7; i += 1) {
+    const offset = (i - 3) * width * 0.12;
+    const phase = now * 0.00015 + i * 0.7;
+    ctx.strokeStyle = `rgba(137, 255, 218, ${0.035 + i * 0.004})`;
+    ctx.lineWidth = 0.8 + (i % 3) * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(width * 0.5 + offset * 0.25, height * 0.98);
+    ctx.bezierCurveTo(
+      width * 0.26 + offset + Math.sin(phase) * 24,
+      height * 0.78,
+      width * 0.74 - offset * 0.28,
+      height * 0.36 + Math.cos(phase) * 18,
+      width * 0.5 + offset * 0.42,
+      height * 0.12,
+    );
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawAmbient(now) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+
+  for (const dot of ambientDots) {
+    dot.phase += dot.speed;
+    dot.x += dot.drift;
+
+    if (dot.x < -10) dot.x = width + 10;
+    if (dot.x > width + 10) dot.x = -10;
+
+    const pulse = (Math.sin(dot.phase + now * 0.0007) + 1) * 0.5;
+    ctx.fillStyle = `rgba(193, 255, 230, ${dot.alpha * (0.25 + pulse * 0.75)})`;
+    ctx.beginPath();
+    ctx.arc(dot.x, dot.y, dot.size * (0.72 + pulse * 0.65), 0, TAU);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawShockwaves(now) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+
+  for (let i = shockwaves.length - 1; i >= 0; i -= 1) {
+    const wave = shockwaves[i];
+    const p = (now - wave.born) / wave.duration;
+
+    if (p >= 1) {
+      shockwaves.splice(i, 1);
+      continue;
+    }
+
+    if (p < 0) {
+      continue;
+    }
+
+    const eased = easeInOut(p);
+    const radius = wave.radius * eased;
+    const alpha = 1 - eased;
+
+    const ring = ctx.createRadialGradient(wave.x, wave.y, radius * 0.55, wave.x, wave.y, radius);
+    ring.addColorStop(0, "rgba(137, 255, 218, 0)");
+    ring.addColorStop(0.72, `rgba(137, 255, 218, ${0.03 * alpha})`);
+    ring.addColorStop(0.9, `rgba(247, 251, 255, ${0.22 * alpha})`);
+    ring.addColorStop(1, "rgba(255, 222, 122, 0)");
+    ctx.fillStyle = ring;
+    ctx.beginPath();
+    ctx.arc(wave.x, wave.y, radius, 0, TAU);
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(137, 255, 218, ${0.4 * alpha})`;
+    ctx.lineWidth = 1.2 + 6 * alpha;
+    ctx.beginPath();
+    ctx.arc(wave.x, wave.y, radius * 0.64, 0, TAU);
+    ctx.stroke();
+
+    for (let j = 0; j < 18; j += 1) {
+      const angle = (j / 18) * TAU + wave.twist * p;
+      const inner = radius * random(0.2, 0.33);
+      const outer = radius * random(0.72, 0.96);
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.09 * alpha})`;
+      ctx.lineWidth = random(0.6, 1.8);
+      ctx.beginPath();
+      ctx.moveTo(wave.x + Math.cos(angle) * inner, wave.y + Math.sin(angle) * inner);
+      ctx.lineTo(wave.x + Math.cos(angle + 0.18 * wave.twist) * outer, wave.y + Math.sin(angle + 0.18 * wave.twist) * outer);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
+function generateTextTargets() {
+  const textCanvas = document.createElement("canvas");
+  const textCtx = textCanvas.getContext("2d", { willReadFrequently: true });
+  const scale = Math.min(window.devicePixelRatio || 1, 2);
+  textCanvas.width = Math.round(width * scale);
+  textCanvas.height = Math.round(height * scale);
+  textCtx.scale(scale, scale);
+  textCtx.clearRect(0, 0, width, height);
+  textCtx.textAlign = "center";
+  textCtx.textBaseline = "middle";
+  textCtx.fillStyle = "white";
+
+  const handwritingFont = `"STXingkai", "华文行楷", "KaiTi", "楷体", "FZShuTi", "Microsoft YaHei", cursive`;
+  const quoteLines = buildQuoteLines(finalQuote);
+  let fontSize = clamp(Math.min(width * 0.118, height * (quoteLines.length > 3 ? 0.145 : 0.19)), 36, 138);
+  const lineCenter = (quoteLines.length - 1) * 0.5;
+  const lines = quoteLines.map((text, index) => {
+    const direction = index % 2 === 0 ? -1 : 1;
+    const centerBias = quoteLines.length === 1 ? 0 : index - lineCenter;
+
+    return {
+      text,
+      x: quoteLines.length === 1 ? 0 : direction * (0.035 + Math.abs(centerBias) * 0.018),
+      y: centerBias,
+      rotate: direction * (0.014 + Math.abs(centerBias) * 0.006),
+    };
+  });
+
+  while (fontSize > 26) {
+    textCtx.font = `500 ${fontSize}px ${handwritingFont}`;
+    const widest = Math.max(...lines.map((line) => textCtx.measureText(line.text).width));
+    const lineHeightForFit = fontSize * 1.08;
+    if (widest <= width * 0.92 && lines.length * lineHeightForFit <= height * 0.72) {
+      break;
+    }
+    fontSize -= 2;
+  }
+
+  textCtx.font = `500 ${fontSize}px ${handwritingFont}`;
+  const lineHeight = fontSize * 1.08;
+  const centerY = height * 0.5;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    textCtx.save();
+    textCtx.translate(width * (0.5 + line.x), centerY + line.y * lineHeight);
+    textCtx.rotate(line.rotate);
+    textCtx.fillText(line.text, 0, 0);
+    textCtx.restore();
+  }
+
+  const data = textCtx.getImageData(0, 0, textCanvas.width, textCanvas.height).data;
+  const step = Math.max(3, Math.round(fontSize / 22));
+  const targets = [];
+
+  for (let y = 0; y < textCanvas.height; y += step * scale) {
+    for (let x = 0; x < textCanvas.width; x += step * scale) {
+      const index = (Math.floor(y) * textCanvas.width + Math.floor(x)) * 4 + 3;
+      if (data[index] > 30 && Math.random() > 0.15) {
+        targets.push({
+          x: x / scale + random(-1.15, 1.15),
+          y: y / scale + random(-1.15, 1.15),
+        });
+      }
+    }
+  }
+
+  targets.sort(() => Math.random() - 0.5);
+  return targets.slice(0, 4600);
+}
+
+function randomGatherSource() {
+  const side = Math.floor(random(0, 5));
+
+  if (side === 0) {
+    return { x: random(-width * 0.06, width * 1.06), y: random(-height * 0.08, height * 0.14) };
+  }
+
+  if (side === 1) {
+    return { x: random(-width * 0.06, width * 1.06), y: random(height * 0.86, height * 1.08) };
+  }
+
+  if (side === 2) {
+    return { x: random(-width * 0.08, width * 0.18), y: random(height * 0.08, height * 0.92) };
+  }
+
+  if (side === 3) {
+    return { x: random(width * 0.82, width * 1.08), y: random(height * 0.08, height * 0.92) };
+  }
+
+  return { x: Math.random() * width, y: Math.random() * height };
+}
+
+function startTextFormation(now) {
+  textMode = "forming";
+  textStartedAt = now;
+  resetFinalLogoFlights(now);
+  setStatus("文字凝聚");
+
+  const targets = generateTextTargets();
+  const desiredSparkCount = Math.min(4800, Math.max(targets.length, Math.round(targets.length * 1.08), sparks.length));
+
+  while (sparks.length < desiredSparkCount) {
+    const source = randomGatherSource();
+    addSpark({
+      x: source.x,
+      y: source.y,
+      vx: random(-0.7, 0.7),
+      vy: random(-0.7, 0.7),
+      size: random(0.55, 1.75),
+      alpha: random(0.12, 0.54),
+    });
+  }
+
+  for (let i = 0; i < sparks.length; i += 1) {
+    if (targets.length) {
+      const baseTarget = targets[i % targets.length];
+      const extraLayer = i >= targets.length;
+
+      sparks[i].target = {
+        x: baseTarget.x + (extraLayer ? random(-2.4, 2.4) : 0),
+        y: baseTarget.y + (extraLayer ? random(-2.4, 2.4) : 0),
+      };
+      sparks[i].driftTarget = null;
+      sparks[i].persistent = false;
+      sparks[i].speed = random(0.0024, 0.0054);
+      sparks[i].windAmp = random(1.35, 3.85);
+      sparks[i].windPhase = random(0, TAU);
+      sparks[i].windSpeed = random(0.00018, 0.00042);
+      sparks[i].size = clamp(sparks[i].size * random(1.03, 1.18), 1.05, 2.85);
+      sparks[i].alpha = Math.max(sparks[i].alpha, random(0.3, 0.66));
+    } else {
+      sparks[i].target = null;
+      sparks[i].vx += random(-0.7, 0.7);
+      sparks[i].vy += random(-0.7, 0.7);
+      sparks[i].alpha *= 0.82;
+    }
+  }
+}
+
+function maybeStartText(now) {
+  if (textMode === "forming") {
+    if (now - textStartedAt > 3600) {
+      setStatus("夏日明亮");
+    }
+    return;
+  }
+
+  const idleDelay = 1500;
+  const screenClear = planes.length === 0 && shockwaves.length === 0;
+
+  if (screenClear) {
+    if (!screenPlanesEmptySince) {
+      screenPlanesEmptySince = now;
+    }
+  } else {
+    screenPlanesEmptySince = 0;
+  }
+
+  if (
+    lastTriggerAt > 0 &&
+    screenClear &&
+    screenPlanesEmptySince > 0 &&
+    now - screenPlanesEmptySince > idleDelay &&
+    now - Math.max(lastTriggerAt, lastPlaneDotAt, lastInboundPlaneAt) > idleDelay
+  ) {
+    startTextFormation(now);
+  }
+}
+
+function drawVignette() {
+  const gradient = ctx.createRadialGradient(
+    width * 0.5,
+    height * 0.5,
+    Math.min(width, height) * 0.18,
+    width * 0.5,
+    height * 0.5,
+    Math.max(width, height) * 0.72,
+  );
+  gradient.addColorStop(0, "rgba(4, 11, 19, 0)");
+  gradient.addColorStop(1, "rgba(4, 11, 19, 0.44)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+}
+
+function animate(now) {
+  const dt = clamp((now - lastFrameAt) / 16.666, 0.25, 2.4);
+  lastFrameAt = now;
+
+  analyzeCamera(now);
+
+  ctx.clearRect(0, 0, width, height);
+  drawGraduationSky(now);
+  drawVignette();
+  drawAmbient(now);
+  drawShockwaves(now);
+  updatePlanes(now);
+  updateSparks(now, dt);
+  maybeStartText(now);
+  drawFinalLogos(now);
+
+  const candidateWaiting =
+    cameraReady &&
+    planes.length === 0 &&
+    shockwaves.length === 0 &&
+    textMode !== "forming" &&
+    now - lastTriggerAt > 1800 &&
+    now - lastPaperCandidateAt < 3000;
+
+  if (textMode === "forming") {
+    // Text state is handled inside maybeStartText.
+  } else if (candidateWaiting) {
+    setStatus("等待下一架纸飞机");
+  } else if (!cameraReady && now - lastTriggerAt > 2600 && planes.length === 0) {
+    setStatus("准备摄像头");
+  } else if (cameraReady && planes.length === 0 && textMode !== "forming" && now - lastTriggerAt > 2800) {
+    setStatus("等待纸飞机");
+  } else if (planes.length > 0 && now - lastTriggerAt > 520) {
+    setStatus("粒子飞行");
+  }
+
+  requestAnimationFrame(animate);
+}
+
+cameraButton.addEventListener("click", startCamera);
+testButton.addEventListener("click", () => {
+  triggerPlaneField(width * random(0.42, 0.58), height * random(0.4, 0.55), true);
+});
+
+function applyQuoteText(event) {
+  event?.preventDefault();
+
+  finalQuote = normalizeQuoteText(quoteInput?.value);
+  if (quoteInput) {
+    quoteInput.value = finalQuote;
+  }
+
+  if (textMode === "forming") {
+    startTextFormation(performance.now());
+  } else {
+    setStatus("文字已提交");
+  }
+
+  showToolbarAndResetIdle();
+}
+
+quoteForm?.addEventListener("submit", applyQuoteText);
+quoteInput?.addEventListener("change", () => {
+  finalQuote = normalizeQuoteText(quoteInput.value);
+  quoteInput.value = finalQuote;
+});
+
+function hideToolbarAfterIdle() {
+  if (toolbar?.matches(":hover") || toolbar?.contains(document.activeElement)) {
+    window.clearTimeout(toolbarIdleTimer);
+    toolbarIdleTimer = window.setTimeout(hideToolbarAfterIdle, TOOLBAR_IDLE_DELAY);
+    return;
+  }
+
+  toolbar?.classList.add("is-hidden");
+}
+
+function showToolbarAndResetIdle() {
+  if (!toolbar) {
+    return;
+  }
+
+  toolbar.classList.remove("is-hidden");
+  window.clearTimeout(toolbarIdleTimer);
+  toolbarIdleTimer = window.setTimeout(hideToolbarAfterIdle, TOOLBAR_IDLE_DELAY);
+}
+
+["mousemove", "pointermove", "touchstart", "keydown"].forEach((eventName) => {
+  window.addEventListener(eventName, showToolbarAndResetIdle, { passive: true });
+});
+
+toolbar?.addEventListener("mouseenter", showToolbarAndResetIdle);
+toolbar?.addEventListener("focusin", showToolbarAndResetIdle);
+showToolbarAndResetIdle();
+
+window.addEventListener("resize", resize);
+resize();
+setStatus("准备摄像头");
+requestAnimationFrame(animate);
+
+if (
+  navigator.mediaDevices?.getUserMedia &&
+  (window.isSecureContext ||
+    location.protocol === "file:" ||
+    location.hostname === "localhost" ||
+    location.hostname === "127.0.0.1")
+) {
+  startCamera();
+} else {
+  cameraNotice.hidden = false;
+}
+
+    </script>
+  </body>
+</html>
