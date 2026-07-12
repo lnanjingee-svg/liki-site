@@ -3,75 +3,38 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>作品 Works / 李琪 Liki</title>
+    <meta name="description" content="李琪 Liki 作品档案。" />
+    <title>行动档案 Works / 李琪 Liki</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="lang-zh">
-    <header class="site-header" data-reveal>
-      <a class="brand" href="index.html"><span>李琪</span><span>Liki</span></a>
-      <nav class="nav" aria-label="Primary navigation">
-        <a href="works.html" data-i18n-zh="作品" data-i18n-en="Works">作品</a>
-        <a href="about.html" data-i18n-zh="关于" data-i18n-en="About">关于</a>
-        <a href="mailto:lnanjingee@gmail.com" data-i18n-zh="联系" data-i18n-en="Contact">联系</a>
-      </nav>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="李琪 Liki 首页"><span>李琪</span><span>Liki</span></a>
+      <nav class="nav" aria-label="Primary navigation"><a href="index.html">Index</a><a href="works.html" data-i18n-zh="作品" data-i18n-en="Works">作品</a><a href="about.html" data-i18n-zh="档案" data-i18n-en="Bio">档案</a><a href="index.html#contact" data-i18n-zh="联系" data-i18n-en="Contact">联系</a></nav>
       <button class="lang-toggle" type="button" aria-label="Switch language"><span data-lang-label>EN</span></button>
     </header>
-
     <main class="page-shell">
-      <section class="page-title" data-reveal>
-        <p class="path">Home / Works / Project</p>
-        <h1>
-          <span class="zh">作品</span>
-          <span class="roman">Works</span>
-        </h1>
-        <p class="zh">作品按照当前主页阅读顺序重新组织。每个重点项目进入第三级详情页，包含横向多图、作品信息与中英文本。</p>
-        <p class="en">Works are reorganized by the current homepage order. Key projects open into third-level detail pages with horizontal image sequences, project data, and bilingual texts.</p>
+      <section class="archive-intro" data-reveal>
+        <div><p class="path">INDEX / ACTION ARCHIVE / 04 PROJECTS</p><h1><span class="zh">行动档案</span><span class="en">Action Archive</span><span>Works 2024—26</span></h1></div>
+        <p class="zh">这里不是按媒介分类的陈列室，而是一组可以进入的现场：等待、压力、游戏和黏连，各自留下身体行动的轨迹。</p><p class="en">This is not a medium-based showroom, but a set of sites to enter: waiting, pressure, play, and stickiness, each leaving a trace of bodily action.</p>
       </section>
-
-      <section class="project-grid works-index" aria-label="Works index">
-        <a class="project-card large" href="pages/staying-place.html" data-reveal>
-          <img src="assets/galleries/staying-place/01.jpg" alt="《停留之处》行为影像截图" />
-          <span>01</span>
-          <h3>《停留之处》<small>Place of Staying</small></h3>
-          <p>2026 / Performance video installation / 16'04"</p>
-        </a>
-        <a class="project-card" href="pages/forged-through-hardship.html" data-reveal>
-          <img src="assets/galleries/forged-through-hardship/01.jpg" alt="《千锤百炼》行为影像截图" />
-          <span>02</span>
-          <h3>《千锤百炼》<small>Forged Through Hardship</small></h3>
-          <p>2024 / Performance video / 3'19"</p>
-        </a>
-        <a class="project-card" href="pages/thread-game.html" data-reveal>
-          <img src="assets/galleries/thread-game/01.jpg" alt="《翻花绳》行为影像" />
-          <span>03</span>
-          <h3>《翻花绳》<small>Thread Game</small></h3>
-          <p>2025 / Performance video</p>
-        </a>
-        <a class="project-card" href="pages/maltose.html" data-reveal>
-          <img src="assets/galleries/maltose/01.jpg" alt="《麦芽糖》行为影像" />
-          <span>04</span>
-          <h3>《麦芽糖》<small>Maltose</small></h3>
-          <p>2025 / Performance video</p>
-        </a>
-        <article class="project-card muted-card" data-reveal>
-          <img src="assets/beneath-device.jpg" alt="《器之下，肤之上》行为影像截图" />
-          <span>05</span>
-          <h3>《器之下，肤之上》<small>Beneath the Device, Above the Skin</small></h3>
-          <p>2023 / Performance video / 12'49"</p>
-        </article>
-        <article class="project-card muted-card" data-reveal>
-          <img src="assets/red-blue-white.jpg" alt="《红蓝白》行为影像截图" />
-          <span>06</span>
-          <h3>《红蓝白》<small>Red, Blue, White</small></h3>
-          <p>2023 / Performance video / 1h 14'45"</p>
-        </article>
+      <section aria-label="Work filters">
+        <div class="archive-controls" data-reveal>
+          <button class="archive-filter" type="button" data-filter="all" aria-pressed="true">All / 04</button>
+          <button class="archive-filter" type="button" data-filter="field" aria-pressed="false">Field</button>
+          <button class="archive-filter" type="button" data-filter="pressure" aria-pressed="false">Pressure</button>
+          <button class="archive-filter" type="button" data-filter="relation" aria-pressed="false">Relation</button>
+          <span class="archive-count" data-archive-count>04 / 04</span>
+        </div>
+        <div class="archive-grid">
+          <a class="archive-card" href="pages/staying-place.html" data-category="field relation" data-tone="red" data-reveal><img src="assets/galleries/staying-place/01.jpg" alt="《停留之处》影像截图" /><div class="archive-card-copy"><div class="card-top"><span>01 / 2026</span><span>FIELD</span></div><div><h2>《停留之处》<small>Place of Staying</small></h2><p>三屏影像 / 装置。等待如何改变观看，并让一个地方逐渐显现。</p></div><span class="card-arrow">↗</span></div></a>
+          <a class="archive-card" href="pages/forged-through-hardship.html" data-category="pressure" data-tone="blue" data-reveal><img src="assets/galleries/forged-through-hardship/01.jpg" alt="《千锤百炼》影像截图" /><div class="archive-card-copy"><div class="card-top"><span>02 / 2024</span><span>PRESSURE</span></div><div><h2>《千锤百炼》<small>Forged Through Hardship</small></h2><p>行为影像。一次次敲击如何把无形的压力变成可见的动作。</p></div><span class="card-arrow">↗</span></div></a>
+          <a class="archive-card" href="pages/thread-game.html" data-category="relation" data-tone="yellow" data-reveal><img src="assets/galleries/thread-game/01.jpg" alt="《翻花绳》影像截图" /><div class="archive-card-copy"><div class="card-top"><span>03 / 2025</span><span>RELATION</span></div><div><h2>《翻花绳》<small>Thread Game</small></h2><p>行为影像。线是规则也是边界，身体在其间不断协商。</p></div><span class="card-arrow">↗</span></div></a>
+          <a class="archive-card" href="pages/maltose.html" data-category="relation field" data-tone="black" data-reveal><img src="assets/galleries/maltose/01.jpg" alt="《麦芽糖》影像截图" /><div class="archive-card-copy"><div class="card-top"><span>04 / 2025</span><span>TOUCH</span></div><div><h2>《麦芽糖》<small>Maltose</small></h2><p>行为影像。甜味、拉伸和消耗成为黏附在身体上的状态。</p></div><span class="card-arrow">↗</span></div></a>
+        </div>
       </section>
     </main>
-
-    <footer class="site-footer">
-      <span>Level 2 / Works</span>
-      <span><a href="index.html">Home</a></span>
-    </footer>
+    <footer class="site-footer"><span>LIKI / ACTION ARCHIVE</span><span><a href="index.html">Back to Index</a></span></footer>
     <script src="script.js"></script>
   </body>
 </html>
