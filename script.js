@@ -75,6 +75,16 @@ if (gallery) {
   if (total) total.textContent = String(figures.length).padStart(2, "0");
   strip.tabIndex = 0;
 
+  figures.forEach((figure) => {
+    const image = figure.querySelector("img");
+    const setImageRatio = () => {
+      if (!image.naturalWidth || !image.naturalHeight) return;
+      figure.style.setProperty("--image-ratio", String(image.naturalWidth / image.naturalHeight));
+    };
+    if (image.complete) setImageRatio();
+    else image.addEventListener("load", setImageRatio, { once: true });
+  });
+
   function updateGallery() {
     const stripLeft = strip.getBoundingClientRect().left;
     activeIndex = figures.reduce((closest, figure, index) => {
@@ -137,4 +147,31 @@ if (gallery) {
     if (event.key === "ArrowRight") showLightbox(activeIndex + 1);
     if (event.key === "ArrowLeft") showLightbox(activeIndex - 1);
   });
+}
+
+if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+  const cursor = document.createElement("div");
+  cursor.className = "site-cursor";
+  cursor.setAttribute("aria-hidden", "true");
+  cursor.innerHTML = "<span>LIKI</span>";
+  document.body.append(cursor);
+
+  document.querySelectorAll(".story-card, .archive-card, .field-list a, .detail-nav a, .action-link, .outline-link").forEach((element) => {
+    element.dataset.cursor = "OPEN";
+  });
+  document.querySelectorAll(".gallery-strip").forEach((element) => { element.dataset.cursor = "DRAG"; });
+  document.querySelectorAll(".gallery-strip figure").forEach((element) => { element.dataset.cursor = "VIEW"; });
+  document.querySelectorAll(".gallery-button").forEach((element) => { element.dataset.cursor = "MOVE"; });
+
+  document.addEventListener("pointermove", (event) => {
+    cursor.style.left = `${event.clientX}px`;
+    cursor.style.top = `${event.clientY}px`;
+    cursor.classList.add("is-visible");
+  });
+  document.addEventListener("pointerover", (event) => {
+    const target = event.target.closest("[data-cursor]");
+    cursor.querySelector("span").textContent = target?.dataset.cursor || "LIKI";
+    cursor.classList.toggle("is-intense", Boolean(target));
+  });
+  document.addEventListener("pointerleave", () => cursor.classList.remove("is-visible"));
 }
