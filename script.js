@@ -79,7 +79,9 @@ if (gallery) {
     const image = figure.querySelector("img");
     const setImageRatio = () => {
       if (!image.naturalWidth || !image.naturalHeight) return;
-      figure.style.setProperty("--image-ratio", String(image.naturalWidth / image.naturalHeight));
+      const ratio = image.naturalWidth / image.naturalHeight;
+      figure.style.setProperty("--image-ratio", String(ratio));
+      figure.classList.toggle("is-ultra-wide", ratio >= 2.3);
     };
     if (image.complete) setImageRatio();
     else image.addEventListener("load", setImageRatio, { once: true });
@@ -167,6 +169,9 @@ if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
     cursor.style.left = `${event.clientX}px`;
     cursor.style.top = `${event.clientY}px`;
     cursor.classList.add("is-visible");
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cursor]");
+    cursor.querySelector("span").textContent = target?.dataset.cursor || "LIKI";
+    cursor.classList.toggle("is-intense", Boolean(target));
   });
   document.addEventListener("pointerover", (event) => {
     const target = event.target.closest("[data-cursor]");
